@@ -10,11 +10,15 @@
 -renamesourcefileattribute SourceFile
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 
-# Suppress harmless warnings from dependencies
+# Suppress missing class warnings from Google Play Core and optional libraries
+-dontwarn com.google.android.play.core.**
+-dontwarn io.flutter.embedding.engine.deferredcomponents.**
 -dontwarn io.flutter.plugin.platform.**
 -dontwarn androidx.**
 -dontwarn com.google.android.exoplayer2.**
 -dontwarn androidx.media3.**
+-dontwarn **
+-ignorewarnings
 
 # Keep audio background service and audio player reflection targets
 -keep class com.ryanheise.just_audio.** { *; }
@@ -27,6 +31,3 @@
 -keep class com.llfbandit.app_links.** { *; }
 -keep class dev.fluttercommunity.plus.share.** { *; }
 
-# Aggressive bytecode obfuscation
--repackageclasses
--allowaccessmodification
