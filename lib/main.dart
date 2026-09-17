@@ -293,7 +293,6 @@ Future<void> initialisation() async {
         androidNotificationIcon: 'drawable/ic_launcher_foreground',
         androidShowNotificationBadge: true,
         androidStopForegroundOnPause: false,
-        androidNotificationOngoing: true,
       ),
     );
 
