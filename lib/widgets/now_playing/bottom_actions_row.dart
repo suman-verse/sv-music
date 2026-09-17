@@ -155,7 +155,7 @@ class _BottomActionsRowState extends State<BottomActionsRow> {
           if (!offlineMode.value && !isRadioStation)
             _buildSimpleActionButton(
               context: context,
-              icon: FluentIcons.radio_tower_24_regular,
+              icon: FluentIcons.sound_source_24_regular,
               colorScheme: colorScheme,
               size: responsiveIconSize,
               onPressed: () {

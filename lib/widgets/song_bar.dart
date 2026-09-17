@@ -72,7 +72,7 @@ List<PopupMenuEntry<String>> _buildSongMenuItems({
     if (!offlineMode.value)
       buildPopupMenuItem<String>(
         value: 'start_radio',
-        icon: FluentIcons.radio_tower_24_regular,
+        icon: FluentIcons.sound_source_24_regular,
         label: startRadioText,
         colorScheme: colorScheme,
       ),
