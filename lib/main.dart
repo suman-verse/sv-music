@@ -214,7 +214,6 @@ class _SvMusicState extends State<SvMusic> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     offlineMode.removeListener(_onOfflineModeChanged);
 
-    Hive.close();
     sharingIntentSubscription.cancel();
     super.dispose();
   }
@@ -290,9 +289,11 @@ Future<void> initialisation() async {
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.svmusic.app',
         androidNotificationChannelName: 'SV Music',
+        androidNotificationChannelDescription: 'SV Music Playback Controls',
         androidNotificationIcon: 'drawable/ic_launcher_foreground',
         androidShowNotificationBadge: true,
         androidStopForegroundOnPause: false,
+        androidNotificationOngoing: true,
       ),
     );
 

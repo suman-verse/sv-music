@@ -19,6 +19,8 @@
  *     please visit: https://github.com/gokadzev/Musify
  */
 
+import 'dart:io';
+
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -54,15 +56,22 @@ class _BottomNavigationPageState extends State<BottomNavigationPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: widget.child.currentIndex == 0,
-      onPopInvokedWithResult: (didPop, _) {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
 
         final currentIndex = widget.child.currentIndex;
         if (currentIndex != 0) {
           widget.child.goBranch(0);
         } else {
-          SystemNavigator.pop();
+          if (Platform.isAndroid) {
+            try {
+              const channel = MethodChannel('com.svmusic.app/native');
+              await channel.invokeMethod('moveTaskToBack');
+              return;
+            } catch (_) {}
+          }
+          await SystemNavigator.pop();
         }
       },
       child: ValueListenableBuilder<bool>(

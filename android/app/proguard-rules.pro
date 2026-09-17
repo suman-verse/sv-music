@@ -30,4 +30,5 @@
 -keep class com.kasem.receive_sharing_intent.** { *; }
 -keep class com.llfbandit.app_links.** { *; }
 -keep class dev.fluttercommunity.plus.share.** { *; }
+-keep class com.svmusic.app.** { *; }
 
