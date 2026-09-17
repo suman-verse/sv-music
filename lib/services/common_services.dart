@@ -553,12 +553,26 @@ Future<List<Map<String, int>>> getSkipSegments(String id) async {
   }
 }
 
+final Map<String, List<Map<String, dynamic>>> _songRadioCache = {};
+
 Future<List<Map<String, dynamic>>> getSongRadio(
   String songYtId, {
   int limit = 25,
 }) async {
+  if (songYtId.isEmpty) return [];
+  final cached = _songRadioCache[songYtId];
+  if (cached != null && cached.isNotEmpty) {
+    return cached;
+  }
   try {
-    return await ytMusicClient.music.getRadioTracks(songYtId, limit: limit);
+    final tracks = await ytMusicClient.music.getRadioTracks(songYtId, limit: limit);
+    if (tracks.isNotEmpty) {
+      if (_songRadioCache.length >= 30) {
+        _songRadioCache.remove(_songRadioCache.keys.first);
+      }
+      _songRadioCache[songYtId] = tracks;
+    }
+    return tracks;
   } catch (e, stackTrace) {
     logger.log(
       'Error fetching song radio for $songYtId',

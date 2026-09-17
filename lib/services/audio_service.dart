@@ -724,8 +724,7 @@ class SvMusicAudioHandler extends BaseAudioHandler {
 
   bool _isFetchingAutoplaySongs = false;
 
-  Future<void> _backgroundAddSongsToQueue() async {
-    // Fire and forget - this runs as a background task without blocking playback
+  Future<void> _backgroundAddSongsToQueue({bool forceFetch = false}) async {
     if (offlineMode.value ||
         !playNextSongAutomatically.value ||
         _isFetchingAutoplaySongs) {
@@ -733,96 +732,92 @@ class SvMusicAudioHandler extends BaseAudioHandler {
     }
 
     final remainingInQueue = _queueList.length - 1 - _currentQueueIndex;
-    // Keep at least 5 tracks buffered ahead, but don't over-fetch
-    if (remainingInQueue >= 5) {
+    // Keep at least 8 tracks buffered ahead, but don't over-fetch
+    if (!forceFetch && remainingInQueue >= 8) {
       return;
     }
 
     _isFetchingAutoplaySongs = true;
-    unawaited(
-      Future.microtask(() async {
-        try {
-          final baseSong = _getCurrentSongForRecommendations();
-          if (baseSong == null || baseSong['ytid'] == null) {
-            return;
-          }
+    try {
+      final baseSong = currentSong ?? _getCurrentSongForRecommendations();
+      if (baseSong == null || baseSong['ytid'] == null) {
+        return;
+      }
 
-          final seedYtId = baseSong['ytid'].toString();
-          final radioTracks = await getSongRadio(seedYtId, limit: 20).timeout(
-            const Duration(seconds: 12),
-            onTimeout: () {
-              logger.log('Background radio tracks fetch timed out');
-              return [];
-            },
-          );
+      final seedYtId = baseSong['ytid'].toString();
+      final radioTracks = await getSongRadio(seedYtId, limit: 25).timeout(
+        const Duration(seconds: 8),
+        onTimeout: () {
+          logger.log('Background radio tracks fetch timed out');
+          return [];
+        },
+      );
 
-          if (radioTracks.isEmpty) {
-            await getSimilarSong(seedYtId).timeout(
-              const Duration(seconds: 8),
-              onTimeout: () {},
-            );
-            if (nextRecommendedSong != null) {
-              final songToAdd = nextRecommendedSong;
-              nextRecommendedSong = null;
-              await _insertRecommendedSong(songToAdd);
-            }
-            return;
-          }
-
-          final existingIds = _queueList
-              .map((s) => s['ytid']?.toString())
-              .whereType<String>()
-              .toSet();
-          final historyIds = _historyList
-              .map((s) => s['ytid']?.toString())
-              .whereType<String>()
-              .toSet();
-
-          final songsToAdd = radioTracks.where((track) {
-            final ytid = track['ytid']?.toString();
-            return ytid != null &&
-                ytid.isNotEmpty &&
-                !existingIds.contains(ytid) &&
-                !historyIds.contains(ytid);
-          }).take(10).toList();
-
-          if (songsToAdd.isNotEmpty) {
-            final wasAtEndOfQueue =
-                _queueList.isNotEmpty &&
-                _currentQueueIndex >= _queueList.length - 1;
-            final shouldPlayNow =
-                wasAtEndOfQueue &&
-                (audioPlayer.processingState == ProcessingState.completed ||
-                    !audioPlayer.playing);
-
-            for (final song in songsToAdd) {
-              final queueSong = _queueEntryIds.createSong(song);
-              queueSong['isAutoPicked'] = true;
-              _queueList.add(queueSong);
-            }
-
-            if (_currentQueueIndex < 0) {
-              _currentQueueIndex = 0;
-            }
-
-            _updateQueueMediaItems();
-            _preloadUpcomingSongs();
-
-            if (shouldPlayNow && _currentLoadingIndex == -1) {
-              await _playFromQueue(_currentQueueIndex + 1);
-            }
-          }
-        } catch (e, stackTrace) {
-          logger.log(
-            'Error in background song addition',
-            error: e,
-            stackTrace: stackTrace,
-          );
-        } finally {
-          _isFetchingAutoplaySongs = false;
+      if (radioTracks.isEmpty) {
+        await getSimilarSong(seedYtId).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {},
+        );
+        if (nextRecommendedSong != null) {
+          final songToAdd = nextRecommendedSong;
+          nextRecommendedSong = null;
+          await _insertRecommendedSong(songToAdd);
         }
-      }),
-    );
+        return;
+      }
+
+      final existingIds = _queueList
+          .map((s) => s['ytid']?.toString())
+          .whereType<String>()
+          .toSet();
+      final historyIds = _historyList
+          .map((s) => s['ytid']?.toString())
+          .whereType<String>()
+          .toSet();
+
+      final songsToAdd = radioTracks.where((track) {
+        final ytid = track['ytid']?.toString();
+        return ytid != null &&
+            ytid.isNotEmpty &&
+            !existingIds.contains(ytid) &&
+            !historyIds.contains(ytid);
+      }).take(15).toList();
+
+      if (songsToAdd.isNotEmpty) {
+        final wasAtEndOfQueue =
+            _queueList.isNotEmpty &&
+            _currentQueueIndex >= _queueList.length - 1;
+        final shouldPlayNow =
+            wasAtEndOfQueue &&
+            (audioPlayer.processingState == ProcessingState.completed ||
+                !audioPlayer.playing);
+
+        for (final song in songsToAdd) {
+          final queueSong = _queueEntryIds.createSong(song);
+          queueSong['isAutoPicked'] = true;
+          _queueList.add(queueSong);
+        }
+
+        if (_currentQueueIndex < 0) {
+          _currentQueueIndex = 0;
+        }
+
+        _updateQueueMediaItems();
+        _preloadUpcomingSongs();
+
+        if (shouldPlayNow && _currentLoadingIndex == -1) {
+          await _playFromQueue(_currentQueueIndex + 1);
+        }
+      }
+    } catch (e, stackTrace) {
+      logger.log(
+        'Error in background song addition',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _isFetchingAutoplaySongs = false;
+    }
   }
 
   Map? _getCurrentSongForRecommendations() {
@@ -1889,6 +1884,23 @@ class SvMusicAudioHandler extends BaseAudioHandler {
         await audioPlayer.pause();
       }
 
+      if (_currentLoadingIndex == -1) {
+        final existingIndex = _queueList.indexWhere(
+          (s) => s['ytid']?.toString() == songData['ytid']?.toString(),
+        );
+        if (existingIndex != -1) {
+          _currentQueueIndex = existingIndex;
+        } else {
+          final queueSong = _queueEntryIds.createSong(songData);
+          _queueList
+            ..clear()
+            ..add(queueSong);
+          _originalQueueList.clear();
+          _currentQueueIndex = 0;
+          _updateQueueMediaItems();
+        }
+      }
+
       final playback = await _resolvePlaybackSource(songData);
 
       // Abort if a newer song was requested while we were fetching the stream URL.
@@ -2100,7 +2112,10 @@ class SvMusicAudioHandler extends BaseAudioHandler {
 
       _updatePlaybackState();
 
-      Future.delayed(const Duration(seconds: 2), _preloadUpcomingSongs);
+      if (playNextSongAutomatically.value && !offlineMode.value) {
+        unawaited(_backgroundAddSongsToQueue());
+      }
+      Future.delayed(const Duration(milliseconds: 500), _preloadUpcomingSongs);
 
       return true;
     } catch (e, stackTrace) {
@@ -2472,10 +2487,11 @@ class SvMusicAudioHandler extends BaseAudioHandler {
       } else if (repeatNotifier.value == AudioServiceRepeatMode.all &&
           _queueList.isNotEmpty) {
         await _playFromQueue(0);
-      } else if (playNextSongAutomatically.value &&
-          _currentLoadingIndex == -1) {
-        // At end of queue with auto-play enabled - trigger background fetch
-        unawaited(_backgroundAddSongsToQueue());
+      } else if (playNextSongAutomatically.value) {
+        await _backgroundAddSongsToQueue(forceFetch: true);
+        if (_currentQueueIndex < _queueList.length - 1) {
+          await _playFromQueue(_currentQueueIndex + 1);
+        }
       }
 
       _cleanupOldPreloadedSongs();
