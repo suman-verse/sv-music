@@ -205,7 +205,7 @@ class _TimeMachinePageState extends State<TimeMachinePage> {
       onShare: () => _shareRecap(
         context,
         key: shareKey,
-        fileName: 'musify-$monthKey-recap.png',
+        fileName: 'sv-music-$monthKey-recap.png',
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -239,7 +239,7 @@ class _TimeMachinePageState extends State<TimeMachinePage> {
       onShare: () => _shareRecap(
         context,
         key: _yearShareKey,
-        fileName: 'musify-$year-recap.png',
+        fileName: 'sv-music-$year-recap.png',
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

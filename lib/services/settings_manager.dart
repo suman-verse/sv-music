@@ -33,7 +33,7 @@ final shouldWeCheckUpdates = ValueNotifier<bool?>(
 );
 
 final playNextSongAutomatically = ValueNotifier<bool>(
-  Hive.box('settings').get('playNextSongAutomatically', defaultValue: false),
+  Hive.box('settings').get('playNextSongAutomatically', defaultValue: true),
 );
 
 final useSystemColor = ValueNotifier<bool>(
@@ -57,7 +57,7 @@ final sponsorBlockSupport = ValueNotifier<bool>(
 );
 
 final externalRecommendations = ValueNotifier<bool>(
-  Hive.box('settings').get('externalRecommendations', defaultValue: false),
+  Hive.box('settings').get('externalRecommendations', defaultValue: true),
 );
 
 final useProxy = ValueNotifier<bool>(
@@ -132,7 +132,7 @@ void reloadSettingsFromStorage() {
   );
   playNextSongAutomatically.value = settings.get(
     'playNextSongAutomatically',
-    defaultValue: false,
+    defaultValue: true,
   );
   useSystemColor.value = settings.get('useSystemColor', defaultValue: true);
   usePureBlackColor.value = settings.get(
@@ -147,7 +147,7 @@ void reloadSettingsFromStorage() {
   );
   externalRecommendations.value = settings.get(
     'externalRecommendations',
-    defaultValue: false,
+    defaultValue: true,
   );
   useProxy.value = settings.get('useProxy', defaultValue: false);
   audioQualitySetting.value = settings.get(

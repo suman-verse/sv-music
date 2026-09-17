@@ -182,18 +182,25 @@ Future<List> _getRecommendationsFromRecentlyPlayed() async {
       ...recent.map((s) => s['ytid']?.toString() ?? ''),
     };
 
-    for (final seed in seeds) {
-      final ytid = seed['ytid']?.toString();
-      if (ytid == null || ytid.isEmpty) continue;
+    final seedYtIds = seeds
+        .map((s) => s['ytid']?.toString())
+        .where((id) => id != null && id.isNotEmpty)
+        .cast<String>()
+        .toList();
 
-      final radioTracks = await getSongRadio(ytid, limit: 15);
-      for (final track in radioTracks) {
-        final trackId = track['ytid']?.toString();
-        if (trackId != null && seenIds.add(trackId)) {
-          allTracks.add(track);
+    if (seedYtIds.isNotEmpty) {
+      final radioResults = await Future.wait(
+        seedYtIds.map((id) => getSongRadio(id, limit: 12)),
+      );
+
+      for (final radioTracks in radioResults) {
+        for (final track in radioTracks) {
+          final trackId = track['ytid']?.toString();
+          if (trackId != null && trackId.isNotEmpty && seenIds.add(trackId)) {
+            allTracks.add(track);
+          }
         }
       }
-      if (allTracks.length >= 25) break;
     }
 
     if (allTracks.isNotEmpty) {

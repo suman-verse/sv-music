@@ -733,8 +733,8 @@ class SvMusicAudioHandler extends BaseAudioHandler {
     }
 
     final remainingInQueue = _queueList.length - 1 - _currentQueueIndex;
-    // Keep at least 3 tracks buffered ahead, but don't over-fetch
-    if (remainingInQueue >= 3) {
+    // Keep at least 5 tracks buffered ahead, but don't over-fetch
+    if (remainingInQueue >= 5) {
       return;
     }
 
@@ -748,7 +748,7 @@ class SvMusicAudioHandler extends BaseAudioHandler {
           }
 
           final seedYtId = baseSong['ytid'].toString();
-          final radioTracks = await getSongRadio(seedYtId, limit: 15).timeout(
+          final radioTracks = await getSongRadio(seedYtId, limit: 20).timeout(
             const Duration(seconds: 12),
             onTimeout: () {
               logger.log('Background radio tracks fetch timed out');
